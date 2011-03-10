@@ -1,0 +1,90 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description": "Nuxeo DM installation.",
+
+  "Parameters": {
+    "InstanceType": {
+      "Description": "Type of EC2 instance to launch",
+      "Type": "String",
+      "Default": "c1.medium"
+    },
+    "KeyName": {
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+      "Type": "String"
+    }
+  },
+
+  "Mappings": {
+    "AWSInstanceType2Arch": {
+      "t1.micro"    : { "Arch": "64" },
+      "m1.small"    : { "Arch" : "32" },
+      "m1.large"    : { "Arch" : "64" },
+      "m1.xlarge"   : { "Arch" : "64" },
+      "m2.xlarge"   : { "Arch" : "64" },
+      "m2.2xlarge"  : { "Arch" : "64" },
+      "m2.4xlarge"  : { "Arch" : "64" },
+      "c1.medium"   : { "Arch" : "32" },
+      "c1.xlarge"   : { "Arch" : "64" },
+      "cc1.4xlarge" : { "Arch" : "64" } 
+    }, 
+    "AWSRegionArch2AMI": {
+      "us-west-1": { "32": "ami-ebbfefae", "64": "ami-f5bfefb0" },
+      "us-east-1": { "32": "ami-3e02f257", "64": "ami-3202f25b" },
+      "eu-west-1": { "32": "ami-311f2b45", "64": "ami-3d1f2b49" },
+      "ap-southeast-1": { "32": "ami-f292eca0", "64": "ami-f092eca2" },
+      "ap-northeast-1": { "32": "ami-5c0fa45d", "64": "ami-5e0fa45f" }
+    }
+  },
+
+  "Resources": {
+
+    "nuxeodm": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": { "Ref": "InstanceType" },
+        "SecurityGroups": [ { "Ref": "nuxeo" }, "default"  ],
+        "KeyName": { "Ref": "KeyName" },
+        "ImageId": { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref": "AWS::Region" },
+                            { "Fn::FindInMap": [ "AWSInstanceType2Arch", { "Ref": "InstanceType" }, "Arch" ] } ] },
+        "UserData": { "Fn::Base64": @@NuxeoDM_single@@ }
+    }
+    },
+
+    "nuxeodmip": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "InstanceId": { "Ref" : "nuxeodm" }
+      }
+    },
+
+    "nuxeo": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow ports 22 (SSH) and 80 (HTTP)",
+        "SecurityGroupIngress": [ {
+          "IpProtocol": "tcp",
+          "FromPort": "22",
+          "ToPort": "22",
+          "CidrIp": "0.0.0.0/0"
+        },
+        {
+          "IpProtocol": "tcp",
+          "FromPort": "80",
+          "ToPort": "80",
+          "CidrIp": "0.0.0.0/0"
+        } ]
+      }
+    }
+
+  },
+
+ "Outputs": {
+    "URL": {
+      "Value" : { "Fn::Join" : [ "", [ "http://", { "Ref" : "nuxeodmip" }, "/" ]]},
+      "Description": "Nuxeo DM URL"
+    }
+  }
+
+}
+

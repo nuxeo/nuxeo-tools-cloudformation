@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# This uses Alestic's runurl script to execute scripts stored remotely
+runurl http://nuxeo.s3.amazonaws.com/scripts/@@NuxeoDM_single@@
+
