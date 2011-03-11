@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, time, string, re, shutil, simplejson
+import os, sys, time, string, re, shutil, simplejson, boto, boto.s3.key
 
 # Local dirs
 TEMPLATES = "templates"
@@ -11,6 +11,7 @@ TARGET = "target"
 # S3 dirs
 S3TEMPLATES = "templates"
 S3SCRIPTS = "scripts"
+S3BUCKET = "nuxeo"
 
 # Common pattern used for replacement
 nxvar = re.compile("@@([^@]*)@@")
@@ -76,6 +77,41 @@ for tpl in tpllist:
         file.close()
         shutil.copyfile(outfile, outfile_with_ts)
 
-# TODO
 # Copy to S3
+try:
+    s3 = boto.connect_s3()
+except:
+    print "Could not connect to S3 - are your credentials in the environment?"
+    sys.exit(-1)
+
+try:
+    bucket = s3.get_bucket(S3BUCKET)
+except:
+    bucket = s3.create_bucket(S3BUCKET)
+    bucket.set_acl("public-read")
+
+def send_to_s3(bucket,key,filename):
+    s3key = boto.s3.key.Key(bucket)
+    s3key.key = key
+    s3key.set_contents_from_filename(filename)
+    s3key.set_acl("public-read")
+
+print "*** Uploading files:"
+# Ensure scripts are available before templates
+for root, dirs, files in os.walk(os.path.join(TARGET, S3SCRIPTS)):
+    for file in files:
+        filename = os.path.join(root, file)
+        relname = os.path.relpath(filename, TARGET)
+        print relname
+        send_to_s3(bucket, relname, filename)
+# Scripts done, send templates
+for root, dirs, files in os.walk(os.path.join(TARGET, S3TEMPLATES)):
+    for file in files:
+        filename = os.path.join(root, file)
+        relname = os.path.relpath(filename, TARGET)
+        print relname
+        send_to_s3(bucket, relname, filename)
+
+# Don't close manually as it throws an error
+#s3.close()
 
