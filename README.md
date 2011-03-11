@@ -35,6 +35,7 @@ The OS is Ubuntu 10.04 LTS (Lucid Lynx).
 Those are EBS boot instance (ie not volatile).
 
 
+
 ## About Nuxeo
 
 Nuxeo provides a modular, extensible Java-based [open source software platform for enterprise content management] [1] and packaged applications for [document management] [2], [digital asset management] [3] and [case management] [4]. Designed by developers for developers, the Nuxeo platform offers a modern architecture, a powerful plug-in model and extensive packaging capabilities for building content applications.
