@@ -46,4 +46,3 @@ Nuxeo provides a modular, extensible Java-based [open source software platform f
 
 More information on: <http://www.nuxeo.com/>
 
-
