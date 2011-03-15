@@ -16,6 +16,7 @@ echo nuxeo-dm nuxeo-dm/database select Autoconfigure PostgreSQL | debconf-set-se
 
 # Upgrade packages and install ssh, vim and nuxeo-dm
 export DEBIAN_FRONTEND=noninteractive
+locale-gen en_US.UTF-8
 aptitude update
 aptitude -q -y safe-upgrade
 aptitude -q -y install apache2
