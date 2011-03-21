@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Increase open files limit
+echo '*       soft    nofile      4096' >> /etc/security/limits.conf
+echo '*       hard    nofile      8192' >> /etc/security/limits.conf
+
 # Add the nuxeo repository to the repository list
 echo "deb http://apt.nuxeo.org/ lucid releases" > /etc/apt/sources.list.d/nuxeo.list
 # Register the nuxeo key
