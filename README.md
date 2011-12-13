@@ -5,9 +5,9 @@ Those templates will deploy Nuxeo architectures on CloudFormation.
 
 ## Templates list
 
-- **NuxeoDM**
+- **Nuxeo**
 
-This will deploy a single EC2 instance containing Nuxeo DM, a PostgreSQL
+This will deploy a single EC2 instance containing Nuxeo, a PostgreSQL
 database and a Apache2 HTTP front-end.  
 An Elastic IP is associated with the instance.
 

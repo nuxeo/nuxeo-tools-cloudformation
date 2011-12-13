@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
 
-  "Description": "Nuxeo DM installation.",
+  "Description": "Nuxeo installation.",
 
   "Parameters": {
     "InstanceType": {
@@ -39,7 +39,7 @@
 
   "Resources": {
 
-    "nuxeodm": {
+    "nuxeoinstance": {
       "Type": "AWS::EC2::Instance",
       "Properties": {
         "InstanceType": { "Ref": "InstanceType" },
@@ -47,14 +47,14 @@
         "KeyName": { "Ref": "KeyName" },
         "ImageId": { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref": "AWS::Region" },
                             { "Fn::FindInMap": [ "AWSInstanceType2Arch", { "Ref": "InstanceType" }, "Arch" ] } ] },
-        "UserData": { "Fn::Base64": @@NuxeoDM_single@@ }
+        "UserData": { "Fn::Base64": @@Nuxeo_single@@ }
     }
     },
 
-    "nuxeodmip": {
+    "nuxeoip": {
       "Type": "AWS::EC2::EIP",
       "Properties": {
-        "InstanceId": { "Ref" : "nuxeodm" }
+        "InstanceId": { "Ref" : "nuxeoinstance" }
       }
     },
 
@@ -81,8 +81,8 @@
 
  "Outputs": {
     "URL": {
-      "Value" : { "Fn::Join" : [ "", [ "http://", { "Ref" : "nuxeodmip" }, "/" ]]},
-      "Description": "Nuxeo DM URL"
+      "Value" : { "Fn::Join" : [ "", [ "http://", { "Ref" : "nuxeoip" }, "/" ]]},
+      "Description": "Nuxeo URL"
     }
   }
 
