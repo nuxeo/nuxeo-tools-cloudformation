@@ -31,8 +31,8 @@ An Elastic IP is associated with the instance.
 ## AMIs
 
 We are using AMIs from [Alestic](http://alestic.com/).  
-The OS is Ubuntu 10.04 LTS (Lucid Lynx).  
-Those are EBS boot instance (ie not volatile).
+The OS is Ubuntu 12.04 LTS (Precise Pangolin).  
+Those are EBS boot instances (ie not volatile).
 
 
 ## About Nuxeo
