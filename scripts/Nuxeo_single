@@ -5,15 +5,11 @@ echo '*       soft    nofile      4096' >> /etc/security/limits.conf
 echo '*       hard    nofile      8192' >> /etc/security/limits.conf
 
 # Add the nuxeo repository to the repository list
-echo "deb http://apt.nuxeo.org/ lucid releases" > /etc/apt/sources.list.d/nuxeo.list
+echo "deb http://apt.nuxeo.org/ precise releases" > /etc/apt/sources.list.d/nuxeo.list
 # Register the nuxeo key
 wget -q -O- http://apt.nuxeo.org/nuxeo.key | apt-key add -
-# Add the partner repository (for java)
-echo "deb http://archive.canonical.com/ubuntu lucid partner" >> /etc/apt/sources.list.d/nuxeo.list
 
 # Pre-accept Sun Java license & set Nuxeo options
-echo sun-java6-jdk shared/accepted-sun-dlj-v1-1 select true | debconf-set-selections
-echo sun-java6-jre shared/accepted-sun-dlj-v1-1 select true | debconf-set-selections
 echo nuxeo nuxeo/bind-address select 127.0.0.1 | debconf-set-selections
 echo nuxeo nuxeo/http-port select 8080 | debconf-set-selections
 echo nuxeo nuxeo/database select Autoconfigure PostgreSQL | debconf-set-selections
@@ -28,7 +24,7 @@ echo "Please wait a few minutes for you instance installation to complete" > /va
 aptitude -q -y install openssh-server openssh-client vim nuxeo
 
 # Update some defaults
-update-java-alternatives -s java-6-sun
+update-java-alternatives -s java-1.7.0-openjdk-amd64
 update-alternatives --set editor /usr/bin/vim.basic
 
 # Configure reverse-proxy
