@@ -7,7 +7,7 @@
     "InstanceType": {
       "Description": "Type of EC2 instance to launch",
       "Type": "String",
-      "Default": "c1.medium"
+      "Default": "c3.large"
     },
     "KeyName": {
       "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
@@ -26,7 +26,8 @@
       "m2.4xlarge"  : { "Arch" : "64" },
       "c1.medium"   : { "Arch" : "64" },
       "c1.xlarge"   : { "Arch" : "64" },
-      "cc1.4xlarge" : { "Arch" : "64" } 
+      "cc1.4xlarge" : { "Arch" : "64" },
+      "c3.large"    : { "Arch" : "64" }
     }, 
     "AWSRegionArch2AMI": {
       "us-west-1": { "64": "ami-fe002cbb" },
