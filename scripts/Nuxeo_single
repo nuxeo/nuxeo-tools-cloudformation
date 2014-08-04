@@ -60,7 +60,7 @@ cat << EOF > /etc/apache2/sites-available/nuxeo.conf
 EOF
 
 a2enmod proxy proxy_http rewrite
-a2dissite default
+a2dissite 000-default
 a2ensite nuxeo
 apache2ctl -k graceful
 
