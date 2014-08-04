@@ -28,7 +28,7 @@ update-java-alternatives -s java-1.7.0-openjdk-amd64
 update-alternatives --set editor /usr/bin/vim.basic
 
 # Configure reverse-proxy
-cat << EOF > /etc/apache2/sites-available/nuxeo
+cat << EOF > /etc/apache2/sites-available/nuxeo.conf
 <VirtualHost _default_:80>
 
     CustomLog /var/log/apache2/nuxeo_access.log combined
