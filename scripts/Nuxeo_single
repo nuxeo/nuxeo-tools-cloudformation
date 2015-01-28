@@ -23,8 +23,21 @@ aptitude -q -y install apache2
 echo "Please wait a few minutes for you instance installation to complete" > /var/www/index.html
 aptitude -q -y install openssh-server openssh-client vim nuxeo
 
+# Install Java 8
+wget -q -O/tmp/jdk-8-linux-x64.tgz --no-check-certificate --header 'Cookie: oraclelicense=accept-securebackup-cookie' 'http://download.oracle.com/otn-pub/java/jdk/8u25-b17/jdk-8u25-linux-x64.tar.gz'
+tar xzf /tmp/jdk-8-linux-x64.tgz -C /usr/lib/jvm
+rm /tmp/jdk-8-linux-x64.tgz
+ln -s /usr/lib/jvm/jdk1.8.0_25 /usr/lib/jvm/java-8
+
+update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-8/jre/bin/java 1081
+update-alternatives --install /usr/bin/javaws javaws /usr/lib/jvm/java-8/jre/bin/javaws 1081
+update-alternatives --install /usr/bin/jexec jexec /usr/lib/jvm/java-8/lib/jexec 1081
+
+update-alternatives --set java /usr/lib/jvm/java-8/jre/bin/java
+update-alternatives --set javaws /usr/lib/jvm/java-8/jre/bin/java
+update-alternatives --set jexec /usr/lib/jvm/java-8/lib/jexec
+
 # Update some defaults
-update-java-alternatives -s java-1.7.0-openjdk-amd64
 update-alternatives --set editor /usr/bin/vim.basic
 
 # Configure reverse-proxy
