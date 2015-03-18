@@ -14,7 +14,7 @@ echo nuxeo nuxeo/bind-address select 127.0.0.1 | debconf-set-selections
 echo nuxeo nuxeo/http-port select 8080 | debconf-set-selections
 echo nuxeo nuxeo/database select Autoconfigure PostgreSQL | debconf-set-selections
 
-# Upgrade packages and install ssh, vim and nuxeo
+# Upgrade packages and install ssh, vim and
 export DEBIAN_FRONTEND=noninteractive
 locale-gen en_US.UTF-8
 aptitude update
@@ -23,7 +23,8 @@ aptitude -q -y install apache2
 echo "Please wait a few minutes for you instance installation to complete" > /var/www/index.html
 aptitude -q -y install openssh-server openssh-client vim nuxeo
 
-# Install Java 8
+# Install Java 7 and 8
+aptitude -q -y install openjdk-7-jdk
 wget -q -O/tmp/jdk-8-linux-x64.tgz --no-check-certificate --header 'Cookie: oraclelicense=accept-securebackup-cookie' 'http://download.oracle.com/otn-pub/java/jdk/8u25-b17/jdk-8u25-linux-x64.tar.gz'
 tar xzf /tmp/jdk-8-linux-x64.tgz -C /usr/lib/jvm
 rm /tmp/jdk-8-linux-x64.tgz
@@ -36,6 +37,9 @@ update-alternatives --install /usr/bin/jexec jexec /usr/lib/jvm/java-8/lib/jexec
 update-alternatives --set java /usr/lib/jvm/java-8/jre/bin/java
 update-alternatives --set javaws /usr/lib/jvm/java-8/jre/bin/java
 update-alternatives --set jexec /usr/lib/jvm/java-8/lib/jexec
+
+# Install Nuxeo
+aptitude -q -y install nuxeo
 
 # Update some defaults
 update-alternatives --set editor /usr/bin/vim.basic
