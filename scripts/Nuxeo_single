@@ -14,14 +14,14 @@ echo nuxeo nuxeo/bind-address select 127.0.0.1 | debconf-set-selections
 echo nuxeo nuxeo/http-port select 8080 | debconf-set-selections
 echo nuxeo nuxeo/database select Autoconfigure PostgreSQL | debconf-set-selections
 
-# Upgrade packages and install ssh, vim and
+# Upgrade packages and install ssh, vim
 export DEBIAN_FRONTEND=noninteractive
 locale-gen en_US.UTF-8
 aptitude update
 aptitude -q -y safe-upgrade
 aptitude -q -y install apache2
 echo "Please wait a few minutes for you instance installation to complete" > /var/www/index.html
-aptitude -q -y install openssh-server openssh-client vim nuxeo
+aptitude -q -y install openssh-server openssh-client vim
 
 # Install Java 7 and 8
 aptitude -q -y install openjdk-7-jdk
