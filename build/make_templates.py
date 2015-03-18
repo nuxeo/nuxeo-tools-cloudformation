@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, time, string, re, shutil, simplejson, boto, boto.s3.key
+import os, sys, time, string, re, shutil, json, boto, boto.s3.key
 
 # Local dirs
 TEMPLATES = "templates"
@@ -70,7 +70,7 @@ for tpl in tpllist:
                 # Replace filename in UserData
                 uddata = string.replace(uddata, "@@"+s+"@@", s+"-"+TS)
             # Encode UserData and replace in template
-            tpldata = string.replace(tpldata, "@@"+ud+"@@", simplejson.dumps(uddata))
+            tpldata = string.replace(tpldata, "@@"+ud+"@@", json.dumps(uddata))
         # Write resulting template
         file = open(outfile, "w")
         file.write(tpldata)
