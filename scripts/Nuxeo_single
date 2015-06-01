@@ -17,14 +17,14 @@ echo nuxeo nuxeo/database select Autoconfigure PostgreSQL | debconf-set-selectio
 # Upgrade packages and install ssh, vim
 export DEBIAN_FRONTEND=noninteractive
 locale-gen en_US.UTF-8
-aptitude update
-aptitude -q -y safe-upgrade
-aptitude -q -y install apache2
+apt-get update
+apt-get -q -y upgrade
+apt-get -q -y install apache2
 echo "Please wait a few minutes for you instance installation to complete" > /var/www/index.html
-aptitude -q -y install openssh-server openssh-client vim
+apt-get -q -y install openssh-server openssh-client vim
 
 # Install Java 7 and 8
-aptitude -q -y install openjdk-7-jdk
+apt-get -q -y install openjdk-7-jdk
 wget -q -O/tmp/jdk-8-linux-x64.tgz --no-check-certificate --header 'Cookie: oraclelicense=accept-securebackup-cookie' 'http://download.oracle.com/otn-pub/java/jdk/8u40-b26/jdk-8u40-linux-x64.tar.gz'
 tar xzf /tmp/jdk-8-linux-x64.tgz -C /usr/lib/jvm
 rm /tmp/jdk-8-linux-x64.tgz
@@ -39,7 +39,7 @@ update-alternatives --set javaws /usr/lib/jvm/java-8/jre/bin/java
 update-alternatives --set jexec /usr/lib/jvm/java-8/lib/jexec
 
 # Install Nuxeo
-aptitude -q -y install nuxeo
+apt-get -q -y install nuxeo
 
 # Update some defaults
 update-alternatives --set editor /usr/bin/vim.basic
