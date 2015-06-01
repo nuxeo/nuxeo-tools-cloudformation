@@ -67,12 +67,6 @@ cat << EOF > /etc/apache2/sites-available/nuxeo.conf
     ProxyPassReverse /nuxeo/ http://localhost:8080/nuxeo/
     ProxyPreserveHost On
 
-    # WSS
-    ProxyPass        /_vti_bin/     http://localhost:8080/_vti_bin/
-    ProxyPass        /_vti_inf.html http://localhost:8080/_vti_inf.html
-    ProxyPassReverse /_vti_bin/     http://localhost:8080/_vti_bin/
-    ProxyPassReverse /_vti_inf.html http://localhost:8080/_vti_inf.html
-
 </VirtualHost>
 EOF
 
