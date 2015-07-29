@@ -1,5 +1,5 @@
 #!/bin/bash
 
 add-apt-repository -y ppa:alestic/ppa && apt-get update && apt-get install -y runurl
-runurl https://nuxeo.s3.amazonaws.com/scripts/@@Nuxeo_single@@
+runurl https://nuxeo.s3.amazonaws.com/scripts/@@NuxeoFT_single@@
 
