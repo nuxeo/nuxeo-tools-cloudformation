@@ -65,7 +65,9 @@ for tpl in tpllist:
                 print "Script:", s
                 # Copy each timestamped script to publish dir
                 sfile = os.path.join(SCRIPTS, s)
-                outsfile = os.path.join(TARGET, S3SCRIPTS, s)+"-"+TS
+                outsfile_nots = os.path.join(TARGET, S3SCRIPTS, s)
+                outsfile = outsfile_nots+"-"+TS
+                shutil.copyfile(sfile, outsfile_nots)
                 shutil.copyfile(sfile, outsfile)
                 # Replace filename in UserData
                 uddata = string.replace(uddata, "@@"+s+"@@", s+"-"+TS)
