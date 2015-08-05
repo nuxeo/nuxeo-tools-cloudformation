@@ -22,7 +22,7 @@ update-locale LANG=en_US.UTF-8
 apt-get update
 apt-get -q -y upgrade
 apt-get -q -y install apache2
-echo "Please wait a few minutes for you instance installation to complete" > /var/www/index.html
+echo "Please wait a few minutes for you instance installation to complete" > /var/www/html/index.html
 apt-get -q -y install openssh-server openssh-client vim
 
 # Install Java 7 and 8
