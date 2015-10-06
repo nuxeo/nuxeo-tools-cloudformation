@@ -1,0 +1,171 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description": "Nuxeo installation in existing VPC.",
+
+  "Parameters": {
+    "KeyName": {
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+    },
+    "InstanceType": {
+      "Description": "Type of EC2 instance to launch",
+      "Type": "String",
+      "Default": "c4.large",
+      "AllowedValues": ["t2.medium", "t2.large", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
+                        "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge"],
+      "ConstraintDescription": "must be a valid EC2 instance type."
+    },
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Description": "VpcId of your existing VPC",
+      "ConstraintDescription": "must be the VPC Id of an existing VPC."
+    },
+    "PublicSubnetId": {
+      "Type": "AWS::EC2::Subnet::Id",
+      "Description": "SubnetId of an existing public subnet in the VPC",
+      "ConstraintDescription": "must be an existing subnet in the selected VPC."
+    },
+    "PrivateSubnetId": {
+      "Type": "AWS::EC2::Subnet::Id",
+      "Description": "SubnetId of an existing private subnet in the VPC",
+      "ConstraintDescription": "must be an existing subnet in the selected VPC."
+    },
+    "BastionSecurityGroupId": {
+      "Type": "AWS::EC2::SecurityGroup::Id",
+      "Description": "SecurityGroupId of the bastion host for the VPC",
+      "ConstraintDescription": "must be an existing security group in the selected VPC."
+    }
+  },
+
+  "Mappings": {
+    "AWSInstanceType2Arch": {
+      "t2.medium"   : { "Arch" : "HVM64"  },
+      "t2.large"    : { "Arch" : "HVM64"  },
+      "m3.medium"   : { "Arch" : "HVM64"  },
+      "m3.large"    : { "Arch" : "HVM64"  },
+      "m3.xlarge"   : { "Arch" : "HVM64"  },
+      "m3.2xlarge"  : { "Arch" : "HVM64"  },
+      "m4.large"    : { "Arch" : "HVM64"  },
+      "m4.xlarge"   : { "Arch" : "HVM64"  },
+      "m4.2xlarge"  : { "Arch" : "HVM64"  },
+      "m4.4xlarge"  : { "Arch" : "HVM64"  },
+      "m4.10xlarge" : { "Arch" : "HVM64"  },
+      "c3.large"    : { "Arch" : "HVM64"  },
+      "c3.xlarge"   : { "Arch" : "HVM64"  },
+      "c3.2xlarge"  : { "Arch" : "HVM64"  },
+      "c3.4xlarge"  : { "Arch" : "HVM64"  },
+      "c3.8xlarge"  : { "Arch" : "HVM64"  },
+      "c4.large"    : { "Arch" : "HVM64"  },
+      "c4.xlarge"   : { "Arch" : "HVM64"  },
+      "c4.2xlarge"  : { "Arch" : "HVM64"  },
+      "c4.4xlarge"  : { "Arch" : "HVM64"  },
+      "c4.8xlarge"  : { "Arch" : "HVM64"  }
+    }, 
+    "AWSRegionArch2AMI": {
+      "us-west-1": { "HVM64": "ami-63955327" },
+      "us-west-2": { "HVM64": "ami-79f8e249" },
+      "us-east-1": { "HVM64": "ami-13fbbc76" },
+      "eu-west-1": { "HVM64": "ami-ab5b6edc" },
+      "eu-central-1": { "HVM64": "ami-94cdcf89" },
+      "ap-northeast-1": { "HVM64": "ami-983fa198" },
+      "ap-southeast-1": { "HVM64": "ami-a06573f2" },
+      "ap-southeast-2": { "HVM64": "ami-07fab33d" },
+      "sa-east-1": { "HVM64": "ami-7755c26a" },
+      "cn-north-1": { "HVM64": "ami-244ad61d" }
+    }
+  },
+
+  "Resources": {
+
+    "lbSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow ports 80 and 443 from anywhere",
+        "VpcId": { "Ref": "VpcId" },
+        "SecurityGroupIngress": [
+          { "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": "0.0.0.0/0"
+          },
+          { "IpProtocol": "tcp",
+            "FromPort": "443",
+            "ToPort": "443",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+
+    "nuxeoSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow ports 22 from bastion, 80 and 8080 from ELB",
+        "VpcId": { "Ref": "VpcId" },
+        "SecurityGroupIngress": [
+          { "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "SourceSecurityGroupId": { "Ref": "BastionSecurityGroupId" }
+          },
+          { "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "SourceSecurityGroupId": { "Ref": "lbSG" }
+          },
+          { "IpProtocol": "tcp",
+            "FromPort": "8080",
+            "ToPort": "8080",
+            "SourceSecurityGroupId": { "Ref": "lbSG" }
+          }
+        ]
+      }
+    },
+
+    "nuxeoInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": { "Ref": "InstanceType" },
+        "SecurityGroupIds": [ { "Ref": "nuxeoSG" } ],
+        "SubnetId": { "Ref": "PrivateSubnetId" },
+        "KeyName": { "Ref": "KeyName" },
+        "ImageId": { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref": "AWS::Region" },
+                            { "Fn::FindInMap": [ "AWSInstanceType2Arch", { "Ref": "InstanceType" }, "Arch" ] } ] },
+        "UserData": { "Fn::Base64": @@NuxeoFT_VPC_single@@ }
+      }
+    },
+
+    "nuxeoLB": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "Subnets": [ { "Ref": "PublicSubnetId" } ],
+        "SecurityGroups": [ { "Ref": "lbSG" } ],
+        "Instances": [ { "Ref": "nuxeoInstance" } ],
+        "Listeners": [ {
+          "LoadBalancerPort": "80",
+          "InstancePort": "80",
+          "Protocol": "HTTP"
+        } ],
+        "HealthCheck": {
+          "Target": "TCP:8080",
+          "HealthyThreshold": "3",
+          "UnhealthyThreshold": "5",
+          "Interval": "30",
+          "Timeout": "5"
+        }
+      }
+    }
+
+  },
+
+ "Outputs": {
+    "DNSName": {
+      "Value" : { "Fn::GetAtt" : [ "nuxeoLB", "CanonicalHostedZoneName" ] },
+      "Description": "DNS name of the load balancer"
+    }
+  }
+
+}
+
