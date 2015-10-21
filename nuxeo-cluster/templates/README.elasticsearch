@@ -1,0 +1,7 @@
+This template deploys an elasticsearch cluster inside a VPC.
+The VPC must already exist and have a private subnet (it is not created by the template).
+
+Ingress rules (TCP 9300) for your application must be added to the ElasticsearchSecurityGroup created by the CloudFormation stack.
+
+TODO: add configurable EBS volumes
+
