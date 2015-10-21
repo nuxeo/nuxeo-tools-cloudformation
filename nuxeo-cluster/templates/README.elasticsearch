@@ -4,5 +4,3 @@ The VPC must already exist and have a private subnet (it is not created by the t
 The base AMIs are Debian Jessie 8.1 ones - the SSH user is "admin".
 
 
-TODO: add configurable EBS volumes
-

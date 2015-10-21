@@ -22,6 +22,11 @@
       "Type": "Number",
       "Default": "3"
     },
+    "VolumeSize": {
+      "Description": "Data disk size (in GB) of the Elasticsearch instances",
+      "Type": "Number",
+      "Default": "10"
+    },
     "ClusterName": {
       "Description": "Name of the Elasticsearch cluster",
       "Type": "String",
@@ -117,11 +122,19 @@
           "PolicyName": "ElasticsearchPolicy",
           "PolicyDocument": {
             "Version": "2012-10-17",
-            "Statement": [{
-              "Effect": "Allow",
-              "Action": "ec2:DescribeInstances",
-              "Resource": "*"
-            }]
+            "Statement": [
+              { "Effect": "Allow",
+                "Action": "ec2:DescribeInstances",
+                "Resource": "*"
+              },
+              { "Effect": "Allow",
+                "Action": [
+                  "ec2:Describe*",
+                  "ec2:CreateTags"
+                ],
+                "Resource": "*"
+              }
+            ]
           }
         }]
       }
@@ -169,7 +182,7 @@
         "DesiredCapacity": { "Ref": "ClusterSize" },
         "Tags": [
           { "Key": "Type", "Value": "Elasticsearch", "PropagateAtLaunch": "true" },
-          { "Key": "Name", "Value": {"Fn::Join": ["_", ["es", {"Ref": "AWS::StackName"}]]}, "PropagateAtLaunch": true }
+          { "Key": "Name", "Value": {"Fn::Join": ["_", [{"Ref": "AWS::StackName"}, "es"]]}, "PropagateAtLaunch": true }
         ]
       }
     },
@@ -195,19 +208,36 @@
         "KeyName": {"Ref": "KeyName"},
         "ImageId": {"Fn::FindInMap": ["AWSRegionArch2AMI", {"Ref": "AWS::Region"},
           {"Fn::FindInMap": ["AWSInstanceType2Arch", {"Ref": "InstanceType"}, "Arch"]}]},
+        "BlockDeviceMappings": [{
+            "DeviceName": "/dev/xvdf",
+            "Ebs": {
+              "VolumeSize": {"Ref": "VolumeSize"}
+            }
+        }],
         "UserData": {"Fn::Base64": {"Fn::Join": ["", [
           "#!/bin/bash\n",
           "printf '\n%s %s\n' $(ifconfig eth0 | grep 'inet addr' | tr ':' ' ' | awk '{print $3}') $(hostname) >> /etc/hosts\n",
           "export DEBIAN_FRONTEND=noninteractive\n",
           "apt-get update\n",
-          "apt-get -y install python-setuptools wget openjdk-7-jdk unzip\n",
+          "apt-get -y install python-setuptools python-pip wget curl openjdk-7-jdk unzip\n",
           "easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+          "pip install --upgrade awscli\n",
           "function error_exit {\n",
           "  /usr/local/bin/cfn-signal -e 1 -r \"$1\" '", {"Ref": "ElasticsearchWaitHandle"}, "'\n",
           "}\n",
           "/usr/local/bin/cfn-init -s ", {"Ref": "AWS::StackId"}, " -r ElasticsearchConfig ",
           "  --region ", {"Ref": "AWS::Region"}, " || error_exit 'failed to run cfn-init'\n",
           "chsh -s /bin/bash es\n",
+          "mkfs.ext4 /dev/xvdf || error_exit 'failed to find data volume'\n",
+          "printf '\n/dev/xvdf               /opt     ext4   defaults,noatime 0 1\n' >> /etc/fstab\n",
+          "mkdir -p /opt\n",
+          "mount -a\n",
+          "instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)\n",
+          "volumes_ids=$(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=${instance_id} --region ", {"Ref": "AWS::Region"}, " | grep VolumeId | tr -d ' ' | sort -u | tr '\"' ' ' | awk '{print $3}')\n",
+          "for v in ${volumes_ids}; do\n",
+          "  aws ec2 create-tags --resources $v --tags Key=Name,Value=", {"Ref": "AWS::StackName"}, "_es --region ", {"Ref": "AWS::Region"}, "\n",
+          "  aws ec2 create-tags --resources $v --tags Key=Type,Value=Elasticsearch --region ", {"Ref": "AWS::Region"}, "\n",
+          "done\n",
           "wget -q -O /tmp/elasticsearch.zip https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-", {"Ref": "ElasticsearchVersion"}, ".zip",
           "  || error_exit 'failed to download Elasticsearch archive'\n",
           "mkdir /opt/es\n",
