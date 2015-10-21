@@ -227,7 +227,7 @@
           "fi\n",
           "printf '#!/bin/bash\n\n' > /etc/init.d/elasticsearch\n",
           "printf 'export ES_HOME=/opt/es/elasticsearch\n' >> /etc/init.d/elasticsearch\n",
-          "printf 'export ES_HEAP_SIZE=$(( $(grep MemTotal /proc/meminfo | awk \"{print $2}\") / 2**17 /10 ))g\n' >> /etc/init.d/elasticsearch\n",
+          "printf \"export ES_HEAP_SIZE=$(( $(grep MemTotal /proc/meminfo | awk '{print $2}') / 2**17 /10 ))g\n\" >> /etc/init.d/elasticsearch\n",
           "printf 'PID_FILE=/var/run/elasticsearch/", {"Ref": "ClusterName"}, ".pid\n' >> /etc/init.d/elasticsearch\n",
           "printf 'DAEMON_OPTS=\"-d -p $PID_FILE -Des.path.home=$ES_HOME\"\n' >> /etc/init.d/elasticsearch\n",
           "printf 'mkdir -p /var/run/elasticsearch\n' >> /etc/init.d/elasticsearch\n",
