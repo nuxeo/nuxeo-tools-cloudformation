@@ -157,6 +157,10 @@
           {"IpProtocol": "tcp", "FromPort": "22", "ToPort": "22", "SourceSecurityGroupId": {"Ref": "SSHFromSecurityGroupId"}},
           {"IpProtocol": "tcp", "FromPort": "9200", "ToPort": "9200", "SourceSecurityGroupId": {"Ref": "ESFromSecurityGroupId"}},
           {"IpProtocol": "tcp", "FromPort": "9300", "ToPort": "9300", "SourceSecurityGroupId": {"Ref": "ESFromSecurityGroupId"}}
+        ],
+        "Tags": [
+          { "Key": "Type", "Value": "Elasticsearch" },
+          { "Key": "Name", "Value": {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "sg", "es"]]} }
         ]
       }
     },
@@ -182,7 +186,7 @@
         "DesiredCapacity": { "Ref": "ClusterSize" },
         "Tags": [
           { "Key": "Type", "Value": "Elasticsearch", "PropagateAtLaunch": "true" },
-          { "Key": "Name", "Value": {"Fn::Join": ["_", [{"Ref": "AWS::StackName"}, "es"]]}, "PropagateAtLaunch": true }
+          { "Key": "Name", "Value": {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "es"]]}, "PropagateAtLaunch": true }
         ]
       }
     },
@@ -235,7 +239,7 @@
           "instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)\n",
           "volumes_ids=$(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=${instance_id} --region ", {"Ref": "AWS::Region"}, " | grep VolumeId | tr -d ' ' | sort -u | tr '\"' ' ' | awk '{print $3}')\n",
           "for v in ${volumes_ids}; do\n",
-          "  aws ec2 create-tags --resources $v --tags Key=Name,Value=", {"Ref": "AWS::StackName"}, "_es --region ", {"Ref": "AWS::Region"}, "\n",
+          "  aws ec2 create-tags --resources $v --tags Key=Name,Value=", {"Ref": "AWS::StackName"}, "-es --region ", {"Ref": "AWS::Region"}, "\n",
           "  aws ec2 create-tags --resources $v --tags Key=Type,Value=Elasticsearch --region ", {"Ref": "AWS::Region"}, "\n",
           "done\n",
           "wget -q -O /tmp/elasticsearch.zip https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-", {"Ref": "ElasticsearchVersion"}, ".zip",
