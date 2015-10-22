@@ -1,0 +1,131 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+
+  "Description": "RDS instance in existing VPC.",
+
+  "Parameters": {
+    "DBInstanceClass": {
+      "Description": "Type of RDS instance to launch",
+      "Type": "String",
+      "Default": "db.m3.large",
+      "AllowedValues": ["db.t2.medium", "db.t2.large", "db.m3.large", "db.m3.xlarge", "db.m3.2xlarge", "db.r3.large", "db.r3.xlarge", "db.r3.2xlarge", "db.r3.4xlarge", "db.r3.8xlarge"],
+      "ConstraintDescription": "must be a valid RDS instance type."
+    },
+    "DBStorage": {
+      "Description": "Storage size (in GB) allocated to RDS",
+      "Type": "Number",
+      "Default": "10",
+      "MinValue": "5"
+    },
+    "DBStorageType": {
+      "Description": "Type of storage used for the RDS instance",
+      "Type": "String",
+      "Default": "gp2",
+      "AllowedValues": ["magnetic", "gp2"]
+    },
+    "DBMasterUser": {
+      "Description": "Username for the master DB account",
+      "Type": "String",
+      "Default": "nuxeoadmin"
+    },
+    "DBMasterPassword": {
+      "Description": "Password for the master DB account",
+      "Type": "String",
+      "Default": "nuxeopass",
+      "NoEcho": "true",
+      "ConstraintDescription": "must be at least 8 characters long."
+    },
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Description": "VpcId of your existing VPC",
+      "ConstraintDescription": "must be the VPC Id of an existing VPC."
+    },
+    "DBSubnetGroupName": {
+      "Description": "Name of the DB subnet group to use",
+      "Type": "String"
+    },
+    "DBFromSecurityGroupId": {
+      "Type": "AWS::EC2::SecurityGroup::Id",
+      "Description": "SecurityGroupId allowed to access the RDS instance",
+      "ConstraintDescription": "must be an existing security group in the selected VPC."
+    },
+    "DBFromAvailabilityZone": {
+      "Description": "Availability zone of the subnet used for your application",
+      "Type": "AWS::EC2::AvailabilityZone::Name",
+      "ConstraintDescription": "must be the name of a valid availability zone"
+    }
+  },
+
+  "Resources": {
+
+    "DBSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable DB access",
+        "VpcId": { "Ref": "VpcId" },
+        "SecurityGroupIngress": [
+          {"IpProtocol": "tcp", "FromPort": "5432", "ToPort": "5432", "SourceSecurityGroupId": {"Ref": "DBFromSecurityGroupId"}}
+        ],
+        "Tags": [
+          { "Key": "Type", "Value": "Database" },
+          { "Key": "Name", "Value": {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "sg", "db"]]} }
+        ]
+      }
+    },
+
+    "DBParams": {
+      "Type": "AWS::RDS::DBParameterGroup",
+      "Properties": {
+        "Description": {"Fn::Join": [" ", ["Parameters group for stack", {"Ref": "AWS::StackName"}]]},
+        "Family": "postgres9.4",
+        "Parameters": {
+          "checkpoint_completion_target"    : "0.9",
+          "checkpoint_segments"             : "32",
+          "default_statistics_target"       : "500",
+          "effective_cache_size"            : "2097152",
+          "log_checkpoints"                 : "on",
+          "log_lock_waits"                  : "on",
+          "log_min_duration_statement"      : "500",
+          "log_statement"                   : "ddl",
+          "log_temp_files"                  : "0",
+          "maintenance_work_mem"            : "1048576",
+          "max_connections"                 : "100",
+          "max_prepared_transactions"       : "100",
+          "shared_buffers"                  : "1048576",
+          "track_functions"                 : "pl",
+          "wal_buffers"                     : "2048",
+          "work_mem"                        : "20480"
+        },
+        "Tags": [
+          { "Key": "Type", "Value": "Database" },
+          { "Key": "Name", "Value": {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "db"]]} }
+        ]
+      }
+    },
+
+    "DBInstance" : {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "DBInstanceIdentifier" : {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "db"]]},
+        "Engine"            : "postgres",
+        "EngineVersion"     : "9.4",
+        "BackupRetentionPeriod": "0",
+        "DBInstanceClass"   : {"Ref": "DBInstanceClass"},
+        "PubliclyAccessible": "false",
+        "AvailabilityZone"  : {"Ref": "DBFromAvailabilityZone"},
+        "DBParameterGroupName" : {"Ref": "DBParams"},
+        "MasterUsername"    : {"Ref": "DBMasterUser"},
+        "MasterUserPassword": {"Ref": "DBMasterPassword"},
+        "AllocatedStorage"  : {"Ref": "DBStorage"},
+        "StorageType"       : {"Ref": "DBStorageType"},
+        "VPCSecurityGroups" : [{"Ref": "DBSecurityGroup"}],
+        "DBSubnetGroupName" : {"Ref": "DBSubnetGroupName"},
+        "Tags": [
+          { "Key": "Type", "Value": "Database" },
+          { "Key": "Name", "Value": {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "db"]]} }
+        ]
+      }
+    }
+
+  }
+}

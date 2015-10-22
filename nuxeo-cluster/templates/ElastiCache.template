@@ -1,0 +1,71 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+
+  "Description": "ElastiCache cluster in existing VPC.",
+
+  "Parameters": {
+    "CacheNodeType": {
+      "Description": "Type of cache nodes",
+      "Type": "String",
+      "Default": "cache.m3.medium",
+      "AllowedValues": ["cache.m3.medium", "db.m3.large", "db.m3.xlarge", "cache.m3.2xlarge", "cache.r3.large", "cache.r3.xlarge", "cache.r3.2xlarge", "cache.r3.4xlarge", "cache.r3.8xlarge"],
+      "ConstraintDescription": "must be a valid cache node type."
+    },
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Description": "VpcId of your existing VPC",
+      "ConstraintDescription": "must be the VPC Id of an existing VPC."
+    },
+    "CacheSubnetGroupName": {
+      "Description": "Name of the cache subnet group to use",
+      "Type": "String"
+    },
+    "CacheFromSecurityGroupId": {
+      "Type": "AWS::EC2::SecurityGroup::Id",
+      "Description": "SecurityGroupId allowed to access the cache cluster",
+      "ConstraintDescription": "must be an existing security group in the selected VPC."
+    },
+    "CacheFromAvailabilityZone": {
+      "Description": "Availability zone of the subnet used for your application",
+      "Type": "AWS::EC2::AvailabilityZone::Name",
+      "ConstraintDescription": "must be the name of a valid availability zone"
+    }
+  },
+
+  "Resources": {
+
+    "CacheSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable cache access",
+        "VpcId": { "Ref": "VpcId" },
+        "SecurityGroupIngress": [
+          {"IpProtocol": "tcp", "FromPort": "6379", "ToPort": "6379", "SourceSecurityGroupId": {"Ref": "CacheFromSecurityGroupId"}}
+        ],
+        "Tags": [
+          { "Key": "Type", "Value": "Redis" },
+          { "Key": "Name", "Value": {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "sg", "cache"]]} }
+        ]
+      }
+    },
+
+    "CacheCluster" : {
+      "Type": "AWS::ElastiCache::CacheCluster",
+      "Properties": {
+        "ClusterName"       : {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "cache"]]},
+        "Engine"            : "redis",
+        "EngineVersion"     : "2.8",
+        "CacheNodeType"     : {"Ref": "CacheNodeType"},
+        "NumCacheNodes"     : "1",
+        "PreferredAvailabilityZone": {"Ref": "CacheFromAvailabilityZone"},
+        "VpcSecurityGroupIds" : [{"Ref": "CacheSecurityGroup"}],
+        "CacheSubnetGroupName" : {"Ref": "CacheSubnetGroupName"},
+        "Tags": [
+          { "Key": "Type", "Value": "Redis" },
+          { "Key": "Name", "Value": {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "cache"]]} }
+        ]
+      }
+    }
+
+  }
+}

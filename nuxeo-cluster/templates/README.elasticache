@@ -1,0 +1,3 @@
+This template deploys an ElastiCache (Redis) cluster inside a VPC.
+The VPC must already exist and have a matching cache subnet group in ElastiCache (it is not created by the template).
+
