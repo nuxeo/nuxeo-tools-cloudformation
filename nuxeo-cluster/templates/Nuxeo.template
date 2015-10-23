@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
 
-  "Description": "Elasticsearch installation in existing VPC.",
+  "Description": "Nuxeo cluster installation in existing VPC.",
 
   "Parameters": {
     "KeyName": {
@@ -10,7 +10,7 @@
       "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
     },
     "InstanceType": {
-      "Description": "Type of Elasticsearch instance to launch",
+      "Description": "Type of Nuxeo instance to launch",
       "Type": "String",
       "Default": "c4.large",
       "AllowedValues": ["t2.medium", "t2.large", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge",
@@ -18,41 +18,36 @@
       "ConstraintDescription": "must be a valid EC2 instance type."
     },
     "ClusterSize": {
-      "Description": "Number of Elasticsearch instances to launch",
+      "Description": "Number of Nuxeo instances to launch",
       "Type": "Number",
-      "Default": "3"
+      "Default": "1"
     },
     "VolumeSize": {
-      "Description": "Data disk size (in GB) of the Elasticsearch instances",
+      "Description": "Data disk size (in GB) of the Nuxeo instances",
       "Type": "Number",
       "Default": "10"
     },
-    "ClusterName": {
-      "Description": "Name of the Elasticsearch cluster",
-      "Type": "String",
-      "Default": "elasticsearch"
-    },
-    "ElasticsearchVersion" : {
-      "Description" : "The version number of Elasticsearch used throughout the application",
+    "NuxeoVersion" : {
+      "Description" : "The version number of Nuxeo used throughout the application",
       "Type" : "String",
-      "Default" : "1.7.3",
-      "AllowedValues" : [ "1.7.3"],
-      "ConstraintDescription" : "Must be a supported version number."
+      "Default" : "LTS",
+      "AllowedValues" : [ "LTS", "FastTrack", "Snapshot"],
+      "ConstraintDescription" : "Must be a supported version."
     },
     "VpcId": {
       "Type": "AWS::EC2::VPC::Id",
       "Description": "VpcId of your existing VPC",
       "ConstraintDescription": "must be the VPC Id of an existing VPC."
     },
+    "PublicSubnetId": {
+      "Type": "AWS::EC2::Subnet::Id",
+      "Description": "SubnetId of an existing public subnet in the VPC",
+      "ConstraintDescription": "must be an existing subnet in the selected VPC."
+    },
     "PrivateSubnetId": {
       "Type": "AWS::EC2::Subnet::Id",
       "Description": "SubnetId of an existing private subnet in the VPC",
       "ConstraintDescription": "must be an existing subnet in the selected VPC."
-    },
-    "ESFromSecurityGroupId": {
-      "Type": "AWS::EC2::SecurityGroup::Id",
-      "Description": "SecurityGroupId allowed to access the Elasticsearch cluster",
-      "ConstraintDescription": "must be an existing security group in the selected VPC."
     },
     "SSHFromSecurityGroupId": {
       "Type": "AWS::EC2::SecurityGroup::Id",
@@ -86,25 +81,27 @@
       "c4.8xlarge"  : { "Arch" : "HVM64"  }
     },
     "AWSRegionArch2AMI": {
-      "ap-northeast-1": { "HVM64": "ami-e624fbe6" },
-      "ap-southeast-1": { "HVM64": "ami-ac360cfe" },
-      "ap-southeast-2": { "HVM64": "ami-bbc5bd81" },
-      "cn-north-1": { "HVM64": "ami-888815b1" },
-      "eu-central-1": { "HVM64": "ami-02b78e1f" },
-      "eu-west-1": { "HVM64": "ami-e31a6594" },
-      "sa-east-1": { "HVM64": "ami-0972f214" },
-      "us-east-1": { "HVM64": "ami-116d857a" },
-      "us-west-1": { "HVM64": "ami-05cf2541" },
-      "us-west-2": { "HVM64": "ami-818eb7b1" }
+      "ap-northeast-1": { "HVM64": "ami-402e4c40" },
+      "ap-southeast-1": { "HVM64": "ami-42170410" },
+      "ap-southeast-2": { "HVM64": "ami-6d6c2657" },
+      "cn-north-1": { "HVM64": "ami-a664f89f" },
+      "eu-central-1": { "HVM64": "ami-46272b5b" },
+      "eu-west-1": { "HVM64": "ami-37360a40" },
+      "sa-east-1": { "HVM64": "ami-1f4bda02" },
+      "us-east-1": { "HVM64": "ami-ff02509a" },
+      "us-west-1": { "HVM64": "ami-198a495d" },
+      "us-west-2": { "HVM64": "ami-8ee605bd" }
     },
-    "ElasticsearchVersion2AWSCloudPluginVersion" : {
-      "1.7.3"   : { "Ver" : "2.7.1" }
+    "NuxeoVersion2DLVersion": {
+      "LTS": { "dlcode": "lastlts" },
+      "FastTrack": { "dlcode": "lastft" },
+      "Snapshot": { "dlcode": "lastsnapshot" }
     }
   },
 
   "Resources": {
 
-    "ElasticsearchRole": {
+    "NuxeoRole": {
       "Type": "AWS::IAM::Role",
       "Properties": {
         "AssumeRolePolicyDocument": {
@@ -119,7 +116,7 @@
         },
         "Path": "/",
         "Policies": [{
-          "PolicyName": "ElasticsearchPolicy",
+          "PolicyName": "NuxeoPolicy",
           "PolicyDocument": {
             "Version": "2012-10-17",
             "Statement": [
@@ -140,66 +137,70 @@
       }
     },
 
-    "ElasticsearchInstanceProfile": {
+    "NuxeoInstanceProfile": {
       "Type": "AWS::IAM::InstanceProfile",
         "Properties": {
           "Path": "/",
-          "Roles": [{ "Ref": "ElasticsearchRole" }]
+          "Roles": [{ "Ref": "NuxeoRole" }]
         }
     },
 
-    "ElasticsearchSecurityGroup": {
+    "LoadBalancerSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
-        "GroupDescription": "Enable Elasticsearch access",
+        "GroupDescription": "Allow ports 80 and 443 from anywhere",
         "VpcId": { "Ref": "VpcId" },
         "SecurityGroupIngress": [
-          {"IpProtocol": "tcp", "FromPort": "22", "ToPort": "22", "SourceSecurityGroupId": {"Ref": "SSHFromSecurityGroupId"}},
-          {"IpProtocol": "tcp", "FromPort": "9200", "ToPort": "9200", "SourceSecurityGroupId": {"Ref": "ESFromSecurityGroupId"}},
-          {"IpProtocol": "tcp", "FromPort": "9300", "ToPort": "9300", "SourceSecurityGroupId": {"Ref": "ESFromSecurityGroupId"}}
+          {"IpProtocol": "tcp", "FromPort": "80", "ToPort": "80", "CidrIp": "0.0.0.0/0" },
+          {"IpProtocol": "tcp", "FromPort": "443", "ToPort": "443", "CidrIp": "0.0.0.0/0" }
         ],
         "Tags": [
-          { "Key": "Type", "Value": "Elasticsearch" },
-          { "Key": "Name", "Value": {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "sg", "es"]]} }
+          { "Key": "Type", "Value": "Nuxeo" },
+          { "Key": "Name", "Value": {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "sg", "elb"]]} }
         ]
       }
     },
 
-    "ElasticsearchSecurityGroupIngress": {
-      "Type": "AWS::EC2::SecurityGroupIngress",
+    "NuxeoSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
-        "GroupId": { "Ref": "ElasticsearchSecurityGroup" },
-        "IpProtocol": "tcp",
-        "FromPort": "9300",
-        "ToPort": "9300",
-        "SourceSecurityGroupId": { "Ref": "ElasticsearchSecurityGroup" }
+        "GroupDescription": "Allow ports 22 from bastion, 80 and 8080 from ELB",
+        "VpcId": { "Ref": "VpcId" },
+        "SecurityGroupIngress": [
+          {"IpProtocol": "tcp", "FromPort": "22", "ToPort": "22", "SourceSecurityGroupId": {"Ref": "SSHFromSecurityGroupId"}},
+          {"IpProtocol": "tcp", "FromPort": "80", "ToPort": "80", "SourceSecurityGroupId": {"Fn::GetAtt": ["LoadBalancerSecurityGroup", "GroupId"]}},
+          {"IpProtocol": "tcp", "FromPort": "8080", "ToPort": "8080", "SourceSecurityGroupId": {"Fn::GetAtt": ["LoadBalancerSecurityGroup", "GroupId"]}}
+        ],
+        "Tags": [
+          { "Key": "Type", "Value": "Nuxeo" },
+          { "Key": "Name", "Value": {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "sg", "nuxeo"]]} }
+        ]
       }
     },
 
-    "ElasticsearchGroup": {
+    "NuxeoAutoScalingGroup": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
       "Properties": {
-        "LaunchConfigurationName": { "Ref": "ElasticsearchConfig" },
+        "LaunchConfigurationName": { "Ref": "NuxeoConfig" },
         "VPCZoneIdentifier": [{ "Ref": "PrivateSubnetId" }],
         "MinSize": "1",
         "MaxSize": "10",
         "DesiredCapacity": { "Ref": "ClusterSize" },
         "Tags": [
-          { "Key": "Type", "Value": "Elasticsearch", "PropagateAtLaunch": "true" },
-          { "Key": "Name", "Value": {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "es"]]}, "PropagateAtLaunch": true }
+          { "Key": "Type", "Value": "Nuxeo", "PropagateAtLaunch": "true" },
+          { "Key": "Name", "Value": {"Fn::Join": ["-", [{"Ref": "AWS::StackName"}, "nuxeo"]]}, "PropagateAtLaunch": true }
         ]
       }
     },
 
-    "ElasticsearchConfig": {
+    "NuxeoConfig": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
-      "DependsOn": "ElasticsearchSecurityGroupIngress",
       "Metadata" : {
         "AWS::CloudFormation::Init" : {
           "config" : {
             "users": {
-              "es": {
-                "homeDir": "/opt/es"
+              "nuxeo": {
+                "homeDir": "/opt/nuxeo"
               }
             },
             "files": {
@@ -215,15 +216,15 @@
                 "owner": "root",
                 "group": "root"
               },
-              "/tmp/es_install.sh": {
-                "source": "https://s3-eu-west-1.amazonaws.com/nuxeo-cfn-test/latest/files/es_install.sh",
-                "mode": "000755",
+              "/tmp/get-nuxeo-distribution": {
+                "source": "https://s3-eu-west-1.amazonaws.com/nuxeo-cfn-test/latest/files/get-nuxeo-distribution",
+                "mode": "000700",
                 "owner": "root",
                 "group": "root"
               },
-              "/etc/init.d/elasticsearch": {
-                "source": "https://s3-eu-west-1.amazonaws.com/nuxeo-cfn-test/latest/files/es_init.sh",
-                "mode": "000755",
+              "/tmp/install_nuxeo.sh": {
+                "source": "https://s3-eu-west-1.amazonaws.com/nuxeo-cfn-test/latest/files/nuxeo_install.sh",
+                "mode": "000700",
                 "owner": "root",
                 "group": "root"
               }
@@ -239,13 +240,12 @@
               "10_install_java8": {
                 "command": "/tmp/java8_install.sh"
               },
-              "50_install_es": {
-                "command": "/tmp/es_install.sh",
+              "50_install_nuxeo": {
+                "command": "/tmp/install_nuxeo.sh",
                 "env": {
                   "REGION": {"Ref": "AWS::Region"},
-                  "ES_VERSION": {"Ref": "ElasticsearchVersion"},
-                  "ES_PLUGIN_VERSION": {"Fn::FindInMap": ["ElasticsearchVersion2AWSCloudPluginVersion", {"Ref": "ElasticsearchVersion"}, "Ver"]},
-                  "ES_CLUSTER": {"Ref": "ClusterName"}
+                  "STACKNAME": {"Ref": "AWS::StackName"},
+                  "NUXEO_VERSION": {"Fn::FindInMap": ["NuxeoVersion2DLVersion", {"Ref": "NuxeoVersion"}, "dlcode"]}
                 }
               }
             }
@@ -254,8 +254,8 @@
       },
       "Properties": {
         "InstanceType": {"Ref": "InstanceType"},
-        "IamInstanceProfile": {"Ref": "ElasticsearchInstanceProfile" },
-        "SecurityGroups": [{"Ref": "ElasticsearchSecurityGroup"}],
+        "IamInstanceProfile": {"Ref": "NuxeoInstanceProfile" },
+        "SecurityGroups": [{"Ref": "NuxeoSecurityGroup"}],
         "KeyName": {"Ref": "KeyName"},
         "ImageId": {"Fn::FindInMap": ["AWSRegionArch2AMI", {"Ref": "AWS::Region"},
           {"Fn::FindInMap": ["AWSInstanceType2Arch", {"Ref": "InstanceType"}, "Arch"]}]},
@@ -274,25 +274,25 @@
           "easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
           "pip install --upgrade awscli\n",
           "function error_exit {\n",
-          "  /usr/local/bin/cfn-signal -e 1 -r \"$1\" '", {"Ref": "ElasticsearchWaitHandle"}, "'\n",
+          "  /usr/local/bin/cfn-signal -e 1 -r \"$1\" '", {"Ref": "NuxeoWaitHandle"}, "'\n",
           "}\n",
-          "/usr/local/bin/cfn-init -s ", {"Ref": "AWS::StackId"}, " -r ElasticsearchConfig ",
+          "/usr/local/bin/cfn-init -s ", {"Ref": "AWS::StackId"}, " -r NuxeoConfig ",
           "  --region ", {"Ref": "AWS::Region"}, " || error_exit 'failed to run cfn-init'\n",
-          "/etc/init.d/elasticsearch start\n",
-          "/usr/local/bin/cfn-signal -e $? '", {"Ref": "ElasticsearchWaitHandle"}, "'\n"
+
+          "/usr/local/bin/cfn-signal -e $? '", {"Ref": "NuxeoWaitHandle"}, "'\n"
         ]]}}
       }
     },
 
-    "ElasticsearchWaitHandle": {
+    "NuxeoWaitHandle": {
       "Type": "AWS::CloudFormation::WaitConditionHandle"
     },
 
-    "ElasticsearchWaitCondition": {
+    "NuxeoWaitCondition": {
       "Type": "AWS::CloudFormation::WaitCondition",
-      "DependsOn": "ElasticsearchConfig",
+      "DependsOn": "NuxeoConfig",
       "Properties": {
-        "Handle": {"Ref": "ElasticsearchWaitHandle"},
+        "Handle": {"Ref": "NuxeoWaitHandle"},
         "Timeout": "600"
       }
     }
