@@ -297,5 +297,17 @@
       }
     }
 
+  },
+
+  "Outputs": {
+    "StackName": {
+      "Description": "CloudFormation stack name",
+      "Value": {"Ref": "AWS::StackName"}
+    },
+    "AutoScalingGroup": {
+      "Description": "Elasticsearch AutoScaling group",
+      "Value": {"Ref": "ElasticsearchGroup"}
+    }
   }
+
 }

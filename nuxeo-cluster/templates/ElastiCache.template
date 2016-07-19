@@ -67,5 +67,16 @@
       }
     }
 
+  },
+
+  "Outputs": {
+    "StackName": {
+      "Description": "CloudFormation stack name",
+      "Value": {"Ref": "AWS::StackName"}
+    },
+    "CacheCluster": {
+      "Description": "Redis cache cluster",
+      "Value": {"Ref": "CacheCluster"}
+    }
   }
 }
