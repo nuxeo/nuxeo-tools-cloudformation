@@ -5,8 +5,8 @@ echo '*       soft    nofile      4096' >> /etc/security/limits.conf
 echo '*       hard    nofile      8192' >> /etc/security/limits.conf
 
 # Add the nuxeo repository to the repository list
-echo "deb http://apt.nuxeo.org/ trusty releases" > /etc/apt/sources.list.d/nuxeo.list
-echo "deb http://apt.nuxeo.org/ trusty fasttracks" >> /etc/apt/sources.list.d/nuxeo.list
+echo "deb http://apt.nuxeo.org/ xenial releases" > /etc/apt/sources.list.d/nuxeo.list
+echo "deb http://apt.nuxeo.org/ xenial fasttracks" >> /etc/apt/sources.list.d/nuxeo.list
 # Register the nuxeo key
 wget -q -O- http://apt.nuxeo.org/nuxeo.key | apt-key add -
 
@@ -25,20 +25,8 @@ apt-get -q -y install apache2
 echo "Please wait a few minutes for you instance installation to complete" > /var/www/html/index.html
 apt-get -q -y install openssh-server openssh-client vim
 
-# Install Java 7 and 8
-apt-get -q -y install openjdk-7-jdk
-wget -q -O/tmp/jdk-8-linux-x64.tgz --no-check-certificate --header 'Cookie: oraclelicense=accept-securebackup-cookie' 'http://download.oracle.com/otn-pub/java/jdk/8u77-b03/jdk-8u77-linux-x64.tar.gz'
-tar xzf /tmp/jdk-8-linux-x64.tgz -C /usr/lib/jvm
-rm /tmp/jdk-8-linux-x64.tgz
-ln -s /usr/lib/jvm/jdk1.8.0_77 /usr/lib/jvm/java-8
-
-update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-8/jre/bin/java 1081
-update-alternatives --install /usr/bin/javaws javaws /usr/lib/jvm/java-8/jre/bin/javaws 1081
-update-alternatives --install /usr/bin/jexec jexec /usr/lib/jvm/java-8/lib/jexec 1081
-
-update-alternatives --set java /usr/lib/jvm/java-8/jre/bin/java
-update-alternatives --set javaws /usr/lib/jvm/java-8/jre/bin/java
-update-alternatives --set jexec /usr/lib/jvm/java-8/lib/jexec
+# Install Java 8
+apt-get -q -y install openjdk-8-jdk
 
 # Install Nuxeo
 apt-get -q -y install nuxeo
